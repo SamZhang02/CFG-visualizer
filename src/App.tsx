@@ -1,16 +1,28 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { generateExampleStrings, isStringInGrammar, parseGrammar, tokenizeInput } from './cfg';
 import { ExamplesPanel } from './components/ExamplesPanel';
 import { GrammarEditor } from './components/GrammarEditor';
 import { MembershipPanel } from './components/MembershipPanel';
 
 const DEFAULT_GRAMMAR = `S -> aSb | ε`;
+const GRAMMAR_STORAGE_KEY = 'cfg-visualizer.grammar-text';
 
 export default function App(): JSX.Element {
-  const [grammarText, setGrammarText] = useState<string>(DEFAULT_GRAMMAR);
+  const [grammarText, setGrammarText] = useState<string>(() => {
+    if (typeof window === 'undefined') {
+      return DEFAULT_GRAMMAR;
+    }
+
+    const saved = window.localStorage.getItem(GRAMMAR_STORAGE_KEY);
+    return saved ?? DEFAULT_GRAMMAR;
+  });
   const [inputText, setInputText] = useState<string>('');
   const [membershipResult, setMembershipResult] = useState<boolean | null>(null);
   const [examples, setExamples] = useState<string[]>([]);
+
+  useEffect(() => {
+    window.localStorage.setItem(GRAMMAR_STORAGE_KEY, grammarText);
+  }, [grammarText]);
 
   const parseResult = useMemo(() => {
     try {
