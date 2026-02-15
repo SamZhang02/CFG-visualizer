@@ -1,6 +1,7 @@
 # CFG Visualizer
+<img width="3190" height="1988" alt="CleanShot 2026-02-15 at 10 38 09@2x" src="https://github.com/user-attachments/assets/33fa47d4-dd2c-4992-90f0-e3fb140650b4" />
 
-This is a fully AI-generated tool made for studying for a computational theory class. It does **not** guarantee correctness.
+This is a fully AI-generated tool made for studying for a computational theory class. It miht not be always correct.
 
 ## What This App Does
 
