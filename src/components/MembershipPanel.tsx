@@ -16,7 +16,6 @@ export function MembershipPanel({
   return (
     <section className="panel">
       <h2>Membership Test</h2>
-      <p className="help">Use spaces for tokenized input (example: <code>id + id</code>).</p>
       <div className="row">
         <input
           type="text"
@@ -30,8 +29,8 @@ export function MembershipPanel({
         </button>
       </div>
       {result !== null && (
-        <p className={result ? 'success' : 'error'}>
-          {result ? 'Accepted by grammar.' : 'Rejected by grammar.'}
+        <p className={result ? "success" : "error"}>
+          {result ? "Accepted by grammar." : "Rejected by grammar."}
         </p>
       )}
     </section>

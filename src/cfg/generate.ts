@@ -4,6 +4,7 @@ type GenerateOptions = {
   count: number;
   maxLength: number;
   maxExpansions?: number;
+  forceTokenSpacing?: boolean;
 };
 
 type QueueState = {
@@ -19,13 +20,16 @@ function countTerminals(form: SymbolRef[]): number {
   return form.reduce((sum, symbol) => sum + (symbol.kind === 'terminal' ? 1 : 0), 0);
 }
 
-function formatTerminalOutput(tokens: string[]): string {
+function formatTerminalOutput(tokens: string[], forceTokenSpacing: boolean): string {
   if (tokens.length === 0) {
     return 'ε';
   }
 
-  const allSingleChar = tokens.every((token) => token.length === 1);
-  return allSingleChar ? tokens.join('') : tokens.join(' ');
+  if (forceTokenSpacing) {
+    return tokens.join(' ');
+  }
+
+  return tokens.join('');
 }
 
 export function generateExampleStrings(grammar: Grammar, options: GenerateOptions): string[] {
@@ -55,7 +59,10 @@ export function generateExampleStrings(grammar: Grammar, options: GenerateOption
     const firstNonTerminalIndex = current.form.findIndex((symbol) => symbol.kind === 'nonterminal');
 
     if (firstNonTerminalIndex === -1) {
-      const text = formatTerminalOutput(current.form.map((symbol) => symbol.value));
+      const text = formatTerminalOutput(
+        current.form.map((symbol) => symbol.value),
+        options.forceTokenSpacing ?? false,
+      );
       output.add(text);
       continue;
     }

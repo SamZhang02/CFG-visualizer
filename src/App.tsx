@@ -37,7 +37,11 @@ export default function App(): JSX.Element {
     setMembershipResult(isAccepted);
   };
 
-  const handleGenerateExamples = (count: number, maxLength: number): void => {
+  const handleGenerateExamples = (
+    count: number,
+    maxLength: number,
+    forceTokenSpacing: boolean,
+  ): void => {
     if (!parseResult.ok) {
       setExamples([]);
       return;
@@ -46,6 +50,7 @@ export default function App(): JSX.Element {
     const generated = generateExampleStrings(parseResult.grammar, {
       count,
       maxLength,
+      forceTokenSpacing,
     });
     setExamples(generated);
   };

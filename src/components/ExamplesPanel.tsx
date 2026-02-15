@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 type ExamplesPanelProps = {
-  onGenerate: (count: number, maxLength: number) => void;
+  onGenerate: (count: number, maxLength: number, forceTokenSpacing: boolean) => void;
   examples: string[];
   disabled: boolean;
 };
@@ -36,13 +36,22 @@ export function ExamplesPanel({ onGenerate, examples, disabled }: ExamplesPanelP
             className="number-input"
           />
         </label>
-        <button
-          type="button"
-          onClick={() => onGenerate(Math.max(1, count), Math.max(0, maxLength))}
-          disabled={disabled}
-        >
-          Generate
-        </button>
+        <div className="button-group">
+          <button
+            type="button"
+            onClick={() => onGenerate(Math.max(1, count), Math.max(0, maxLength), false)}
+            disabled={disabled}
+          >
+            Generate
+          </button>
+          <button
+            type="button"
+            onClick={() => onGenerate(Math.max(1, count), Math.max(0, maxLength), true)}
+            disabled={disabled}
+          >
+            Generate + spaces
+          </button>
+        </div>
       </div>
 
       {examples.length > 0 && (

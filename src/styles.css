@@ -52,6 +52,18 @@ code {
   font-size: 0.95rem;
 }
 
+.grammar-rules {
+  color: #334155;
+  font-size: 0.9rem;
+}
+
+.grammar-rules ul {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
 .grammar-input {
   width: 100%;
   border: 1px solid #94a3b8;
@@ -79,6 +91,11 @@ code {
 
 .row-wrap {
   flex-wrap: wrap;
+}
+
+.button-group {
+  display: inline-flex;
+  gap: 0.6rem;
 }
 
 .text-input,

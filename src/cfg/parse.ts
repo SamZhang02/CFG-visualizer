@@ -178,9 +178,9 @@ export function parseGrammar(source: string): ParseGrammarResult {
     }
 
     const lhs = line.slice(0, arrowIndex).trim();
-    if (!/^[A-Z][A-Za-z0-9_]*$/.test(lhs)) {
+    if (!/^[A-Z][A-Z0-9_]*$/.test(lhs)) {
       throw new Error(
-        `Invalid nonterminal '${lhs}' on line ${lineNumber}. Use names like S, Expr, A1.`,
+        `Invalid nonterminal '${lhs}' on line ${lineNumber}. Use ALL CAPS names like S, EXPR, A1.`,
       );
     }
 

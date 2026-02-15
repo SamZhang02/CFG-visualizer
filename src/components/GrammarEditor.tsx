@@ -33,6 +33,15 @@ export function GrammarEditor({ value, onChange }: GrammarEditorProps): JSX.Elem
       <p className="help">
         Enter productions one per line, for example <code>S -&gt; aSb | ε</code>.
       </p>
+      <div className="grammar-rules" aria-label="Grammar rules">
+        <strong>Grammar rules:</strong>
+        <ul>
+          <li>Nonterminals (production names) must be ALL CAPS: <code>S</code>, <code>EXPR</code>.</li>
+          <li>Use spaces between adjacent nonterminals: <code>S -&gt; A B</code>, not <code>S -&gt; AB</code>.</li>
+          <li>Use <code>|</code> for alternatives and <code>ε</code> for empty production.</li>
+          <li>Use quotes for multi-character terminals: <code>S -&gt; &quot;id&quot; EXPR</code>.</li>
+        </ul>
+      </div>
       <textarea
         ref={textareaRef}
         className="grammar-input"
