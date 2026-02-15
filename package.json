@@ -24,5 +24,5 @@
     "typescript": "^5.6.2",
     "vite": "^5.4.8"
   },
-  "homepage": "https://samzhang02.github.io/cfg-visualizer"
+  "homepage": "https://samzhang02.github.io/CFG-visualizer/"
 }
