@@ -8,23 +8,31 @@ type GrammarEditorProps = {
 export function GrammarEditor({ value, onChange }: GrammarEditorProps): JSX.Element {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const insertEpsilon = (): void => {
+  const insertAtCaret = (text: string): void => {
     const textarea = textareaRef.current;
     if (!textarea) {
-      onChange(`${value}ε`);
+      onChange(`${value}${text}`);
       return;
     }
 
     const start = textarea.selectionStart ?? value.length;
     const end = textarea.selectionEnd ?? value.length;
-    const nextValue = `${value.slice(0, start)}ε${value.slice(end)}`;
-    const nextCaret = start + 1;
+    const nextValue = `${value.slice(0, start)}${text}${value.slice(end)}`;
+    const nextCaret = start + text.length;
     onChange(nextValue);
 
     requestAnimationFrame(() => {
       textarea.focus();
       textarea.setSelectionRange(nextCaret, nextCaret);
     });
+  };
+
+  const insertEpsilon = (): void => {
+    insertAtCaret('ε');
+  };
+
+  const insertPipe = (): void => {
+    insertAtCaret('|');
   };
 
   return (
@@ -51,6 +59,9 @@ export function GrammarEditor({ value, onChange }: GrammarEditorProps): JSX.Elem
         spellCheck={false}
       />
       <div className="row grammar-toolbar">
+        <button type="button" onClick={insertPipe}>
+          Insert |
+        </button>
         <button type="button" onClick={insertEpsilon}>
           Insert ε
         </button>
