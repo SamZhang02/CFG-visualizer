@@ -4,6 +4,7 @@ type MembershipPanelProps = {
   onCheck: () => void;
   result: boolean | null;
   disabled: boolean;
+  embedded?: boolean;
 };
 
 export function MembershipPanel({
@@ -12,10 +13,11 @@ export function MembershipPanel({
   onCheck,
   result,
   disabled,
+  embedded = false,
 }: MembershipPanelProps): JSX.Element {
-  return (
-    <section className="panel">
-      <h2>Membership Test</h2>
+  const content = (
+    <>
+      {!embedded && <h2>Membership Test</h2>}
       <div className="row">
         <input
           type="text"
@@ -29,10 +31,16 @@ export function MembershipPanel({
         </button>
       </div>
       {result !== null && (
-        <p className={result ? "success" : "error"}>
-          {result ? "Accepted by grammar." : "Rejected by grammar."}
+        <p className={result ? 'success' : 'error'}>
+          {result ? 'Accepted by grammar.' : 'Rejected by grammar.'}
         </p>
       )}
-    </section>
+    </>
   );
+
+  if (embedded) {
+    return <div className="panel-section">{content}</div>;
+  }
+
+  return <section className="panel">{content}</section>;
 }

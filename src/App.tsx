@@ -113,29 +113,31 @@ export default function App(): JSX.Element {
         )
       )}
 
-      <section className="grid">
+      <section className="panel">
+        <h2>Membership + Parse Trees</h2>
         <MembershipPanel
           input={inputText}
           onInputChange={setInputText}
           onCheck={handleCheckMembership}
           result={membershipResult}
           disabled={!parseResult.ok}
+          embedded
         />
-
-        <ExamplesPanel
-          onGenerate={handleGenerateExamples}
-          examples={examples}
-          disabled={!parseResult.ok}
+        <ParseTreePanel
+          input={inputText}
+          accepted={membershipResult}
+          trees={parseTrees}
+          selectedIndex={selectedParseIndex}
+          onSelectIndex={setSelectedParseIndex}
+          truncated={treesTruncated}
+          embedded
         />
       </section>
 
-      <ParseTreePanel
-        input={inputText}
-        accepted={membershipResult}
-        trees={parseTrees}
-        selectedIndex={selectedParseIndex}
-        onSelectIndex={setSelectedParseIndex}
-        truncated={treesTruncated}
+      <ExamplesPanel
+        onGenerate={handleGenerateExamples}
+        examples={examples}
+        disabled={!parseResult.ok}
       />
     </main>
   );

@@ -7,6 +7,7 @@ type ParseTreePanelProps = {
   selectedIndex: number;
   onSelectIndex: (index: number) => void;
   truncated: boolean;
+  embedded?: boolean;
 };
 
 function ParseNodeView({ node }: { node: ParseTreeNode }): JSX.Element {
@@ -38,14 +39,15 @@ export function ParseTreePanel({
   selectedIndex,
   onSelectIndex,
   truncated,
+  embedded = false,
 }: ParseTreePanelProps): JSX.Element {
   const hasResult = accepted !== null;
   const safeIndex = trees.length === 0 ? 0 : Math.min(selectedIndex, trees.length - 1);
   const selectedTree = trees[safeIndex] ?? null;
 
-  return (
-    <section className="panel parse-tree-panel">
-      <h2>Parse Trees</h2>
+  const content = (
+    <>
+      {!embedded && <h2>Parse Trees</h2>}
       {!hasResult && <p className="help">Run a membership test to build parse trees.</p>}
       {hasResult && accepted === false && <p className="error">No parse tree: input is rejected.</p>}
       {hasResult && accepted && trees.length === 0 && (
@@ -91,6 +93,12 @@ export function ParseTreePanel({
           )}
         </>
       )}
-    </section>
+    </>
   );
+
+  if (embedded) {
+    return <div className="panel-section parse-tree-panel">{content}</div>;
+  }
+
+  return <section className="panel parse-tree-panel">{content}</section>;
 }

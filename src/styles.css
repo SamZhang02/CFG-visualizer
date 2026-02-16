@@ -47,6 +47,11 @@ code {
   gap: 0.75rem;
 }
 
+.panel-section + .panel-section {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 0.75rem;
+}
+
 .help {
   color: #475569;
   font-size: 0.95rem;
@@ -75,12 +80,6 @@ code {
 
 .grammar-toolbar {
   justify-content: flex-start;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1rem;
 }
 
 .row {
