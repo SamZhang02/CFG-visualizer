@@ -53,6 +53,37 @@ function splitAlternatives(rhs: string): string[] {
   return parts;
 }
 
+function stripTrailingProductionSemicolon(rhs: string): string {
+  let quote: string | null = null;
+  let lastNonWhitespaceOutsideQuote = -1;
+
+  for (let i = 0; i < rhs.length; i += 1) {
+    const char = rhs[i];
+
+    if (quote !== null) {
+      if (char === quote) {
+        quote = null;
+      }
+      continue;
+    }
+
+    if (char === '"' || char === "'") {
+      quote = char;
+      continue;
+    }
+
+    if (!isWhitespace(char)) {
+      lastNonWhitespaceOutsideQuote = i;
+    }
+  }
+
+  if (lastNonWhitespaceOutsideQuote >= 0 && rhs[lastNonWhitespaceOutsideQuote] === ';') {
+    return rhs.slice(0, lastNonWhitespaceOutsideQuote).trimEnd();
+  }
+
+  return rhs;
+}
+
 function parseAlternative(alt: string, lineNumber: number): SymbolRef[] {
   if (alt.length === 0) {
     return [];
@@ -88,11 +119,12 @@ function parseAlternative(alt: string, lineNumber: number): SymbolRef[] {
         throw new Error(`Unclosed quote on line ${lineNumber}.`);
       }
 
-      if (value.length === 0) {
+      const normalizedValue = value.trim();
+      if (normalizedValue.length === 0) {
         throw new Error(`Empty quoted terminal on line ${lineNumber}.`);
       }
 
-      result.push({ kind: 'terminal', value });
+      result.push({ kind: 'terminal', value: normalizedValue });
       i = j + 1;
       continue;
     }
@@ -184,7 +216,7 @@ export function parseGrammar(source: string): ParseGrammarResult {
       );
     }
 
-    const rhsSource = line.slice(arrowIndex + 2).trim();
+    const rhsSource = stripTrailingProductionSemicolon(line.slice(arrowIndex + 2).trim());
     const alternatives = splitAlternatives(rhsSource);
 
     if (alternatives.length === 0) {
@@ -230,4 +262,54 @@ export function tokenizeInput(value: string): string[] {
   }
 
   return Array.from(trimmed);
+}
+
+export function tokenizeInputForGrammar(value: string, grammar: Grammar): string[] {
+  const source = value.trim();
+  if (source.length === 0) {
+    return [];
+  }
+
+  const terminals = Array.from(
+    new Set(
+      grammar.productions
+        .flatMap((production) => production.rhs)
+        .filter((symbol): symbol is Extract<SymbolRef, { kind: 'terminal' }> => symbol.kind === 'terminal')
+        .map((symbol) => symbol.value)
+        .filter((terminal) => terminal.length > 0),
+    ),
+  ).sort((a, b) => b.length - a.length);
+
+  const tokens: string[] = [];
+  let i = 0;
+
+  while (i < source.length) {
+    if (isWhitespace(source[i])) {
+      i += 1;
+      continue;
+    }
+
+    let matched: string | null = null;
+    for (const terminal of terminals) {
+      if (source.startsWith(terminal, i)) {
+        matched = terminal;
+        break;
+      }
+    }
+
+    if (matched !== null) {
+      tokens.push(matched);
+      i += matched.length;
+      continue;
+    }
+
+    let j = i + 1;
+    while (j < source.length && !isWhitespace(source[j])) {
+      j += 1;
+    }
+    tokens.push(source.slice(i, j));
+    i = j;
+  }
+
+  return tokens;
 }

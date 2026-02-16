@@ -152,6 +152,63 @@ button:disabled {
   color: #166534;
 }
 
+.parse-tree-panel {
+  overflow-x: auto;
+}
+
+.parse-tree-toolbar p {
+  margin: 0;
+}
+
+.parse-tree-canvas {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.75rem;
+  background: #ffffff;
+  overflow-x: auto;
+}
+
+.parse-tree-root,
+.parse-tree-root ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  list-style: none;
+}
+
+.parse-tree-root ul {
+  border-left: 1px dashed #94a3b8;
+  margin-left: 0.35rem;
+}
+
+.parse-tree-root li {
+  margin: 0.25rem 0;
+}
+
+.tree-node-label,
+.tree-terminal-label,
+.tree-epsilon-label {
+  font-family: "IBM Plex Mono", "Fira Code", monospace;
+  font-size: 0.9rem;
+  border-radius: 4px;
+  padding: 0.1rem 0.3rem;
+  display: inline-block;
+}
+
+.tree-node-label {
+  background: #e0f2fe;
+  color: #0c4a6e;
+}
+
+.tree-terminal-label {
+  background: #dcfce7;
+  color: #14532d;
+}
+
+.tree-epsilon-label {
+  background: #f1f5f9;
+  color: #334155;
+}
+
 @media (max-width: 640px) {
   .row {
     flex-direction: column;

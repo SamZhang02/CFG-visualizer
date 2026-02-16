@@ -1,8 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { generateExampleStrings, isStringInGrammar, parseGrammar, tokenizeInput } from './cfg';
+import {
+  generateExampleStrings,
+  parseGrammar,
+  type ParseTreeNode,
+  parseTreesForTokens,
+  tokenizeInputForGrammar,
+} from './cfg';
 import { ExamplesPanel } from './components/ExamplesPanel';
 import { GrammarEditor } from './components/GrammarEditor';
 import { MembershipPanel } from './components/MembershipPanel';
+import { ParseTreePanel } from './components/ParseTreePanel';
 
 const DEFAULT_GRAMMAR = `S -> aSb | ε`;
 const GRAMMAR_STORAGE_KEY = 'cfg-visualizer.grammar-text';
@@ -19,6 +26,9 @@ export default function App(): JSX.Element {
   const [inputText, setInputText] = useState<string>('');
   const [membershipResult, setMembershipResult] = useState<boolean | null>(null);
   const [examples, setExamples] = useState<string[]>([]);
+  const [parseTrees, setParseTrees] = useState<ParseTreeNode[]>([]);
+  const [selectedParseIndex, setSelectedParseIndex] = useState<number>(0);
+  const [treesTruncated, setTreesTruncated] = useState<boolean>(false);
 
   useEffect(() => {
     window.localStorage.setItem(GRAMMAR_STORAGE_KEY, grammarText);
@@ -38,15 +48,28 @@ export default function App(): JSX.Element {
     }
   }, [grammarText]);
 
+  useEffect(() => {
+    setMembershipResult(null);
+    setParseTrees([]);
+    setSelectedParseIndex(0);
+    setTreesTruncated(false);
+  }, [grammarText, inputText]);
+
   const handleCheckMembership = (): void => {
     if (!parseResult.ok) {
       setMembershipResult(null);
+      setParseTrees([]);
+      setSelectedParseIndex(0);
+      setTreesTruncated(false);
       return;
     }
 
-    const tokens = tokenizeInput(inputText);
-    const isAccepted = isStringInGrammar(parseResult.grammar, tokens);
-    setMembershipResult(isAccepted);
+    const tokens = tokenizeInputForGrammar(inputText, parseResult.grammar);
+    const parseTreesResult = parseTreesForTokens(parseResult.grammar, tokens, { maxTrees: 30 });
+    setMembershipResult(parseTreesResult.accepted);
+    setParseTrees(parseTreesResult.trees);
+    setSelectedParseIndex(0);
+    setTreesTruncated(parseTreesResult.truncated);
   };
 
   const handleGenerateExamples = (
@@ -105,6 +128,15 @@ export default function App(): JSX.Element {
           disabled={!parseResult.ok}
         />
       </section>
+
+      <ParseTreePanel
+        input={inputText}
+        accepted={membershipResult}
+        trees={parseTrees}
+        selectedIndex={selectedParseIndex}
+        onSelectIndex={setSelectedParseIndex}
+        truncated={treesTruncated}
+      />
     </main>
   );
 }

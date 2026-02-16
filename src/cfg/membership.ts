@@ -7,6 +7,34 @@ type EarleyState = {
   origin: number;
 };
 
+export type ParseTreeTerminal = {
+  kind: 'terminal';
+  value: string;
+  tokenIndex: number;
+};
+
+export type ParseTreeNode = {
+  kind: 'nonterminal';
+  value: string;
+  start: number;
+  end: number;
+  children: ParseTreeChild[];
+};
+
+export type ParseTreeChild = ParseTreeNode | ParseTreeTerminal;
+
+export type ParseTreesResult = {
+  accepted: boolean;
+  trees: ParseTreeNode[];
+  truncated: boolean;
+};
+
+type CompletedState = EarleyState & { end: number };
+
+type ParseTreeOptions = {
+  maxTrees?: number;
+};
+
 function stateKey(state: EarleyState): string {
   const rhs = state.rhs
     .map((symbol) => `${symbol.kind === 'terminal' ? 't' : 'n'}:${symbol.value}`)
@@ -43,7 +71,7 @@ function addState(chart: Map<string, EarleyState>, state: EarleyState): boolean 
   return true;
 }
 
-export function isStringInGrammar(grammar: Grammar, tokens: string[]): boolean {
+function buildChart(grammar: Grammar, tokens: string[]): Map<string, EarleyState>[] {
   const n = tokens.length;
   const chart: Map<string, EarleyState>[] = Array.from(
     { length: n + 1 },
@@ -102,15 +130,229 @@ export function isStringInGrammar(grammar: Grammar, tokens: string[]): boolean {
     }
   }
 
-  for (const state of chart[n].values()) {
-    if (
-      state.lhs === '$start' &&
-      state.origin === 0 &&
-      state.dot === state.rhs.length
-    ) {
+  return chart;
+}
+
+function isAccepted(chart: Map<string, EarleyState>[], inputLength: number): boolean {
+  for (const state of chart[inputLength].values()) {
+    if (state.lhs === '$start' && state.origin === 0 && state.dot === state.rhs.length) {
       return true;
     }
   }
-
   return false;
+}
+
+function completedStateId(state: CompletedState): string {
+  return `${stateKey(state)}|${state.end}`;
+}
+
+function completedIndexKey(lhs: string, start: number, end: number): string {
+  return `${lhs}|${start}|${end}`;
+}
+
+export function parseTreesForTokens(
+  grammar: Grammar,
+  tokens: string[],
+  options?: ParseTreeOptions,
+): ParseTreesResult {
+  const chart = buildChart(grammar, tokens);
+  const n = tokens.length;
+  const accepted = isAccepted(chart, n);
+
+  const maxTrees = Math.max(0, options?.maxTrees ?? 20);
+  if (!accepted || maxTrees === 0) {
+    return {
+      accepted,
+      trees: [],
+      truncated: false,
+    };
+  }
+
+  const completedBySpan = new Map<string, CompletedState[]>();
+  const stateById = new Map<string, CompletedState>();
+  const acceptingStartIds: string[] = [];
+
+  for (let end = 0; end < chart.length; end += 1) {
+    for (const state of chart[end].values()) {
+      if (!isComplete(state)) {
+        continue;
+      }
+      const completed: CompletedState = { ...state, end };
+      const id = completedStateId(completed);
+      stateById.set(id, completed);
+
+      const key = completedIndexKey(completed.lhs, completed.origin, completed.end);
+      const existing = completedBySpan.get(key);
+      if (existing) {
+        existing.push(completed);
+      } else {
+        completedBySpan.set(key, [completed]);
+      }
+
+      if (
+        completed.lhs === '$start' &&
+        completed.origin === 0 &&
+        completed.end === n &&
+        completed.rhs.length === 1
+      ) {
+        acceptingStartIds.push(id);
+      }
+    }
+  }
+
+  const derivationMemo = new Map<string, ParseTreeChild[][]>();
+  const treeMemo = new Map<string, ParseTreeNode[]>();
+  const inProgress = new Set<string>();
+  let truncated = false;
+
+  function pushLimited<T>(items: T[], item: T): void {
+    if (items.length < maxTrees) {
+      items.push(item);
+      return;
+    }
+    truncated = true;
+  }
+
+  function deriveRhs(
+    rhs: SymbolRef[],
+    symbolIndex: number,
+    start: number,
+    end: number,
+  ): ParseTreeChild[][] {
+    const memoKey = `${rhs
+      .map((symbol) => `${symbol.kind}:${symbol.value}`)
+      .join(',')}|${symbolIndex}|${start}|${end}`;
+    const existing = derivationMemo.get(memoKey);
+    if (existing) {
+      return existing;
+    }
+
+    if (symbolIndex >= rhs.length) {
+      return start === end ? [[]] : [];
+    }
+
+    const symbol = rhs[symbolIndex];
+    const results: ParseTreeChild[][] = [];
+
+    if (symbol.kind === 'terminal') {
+      if (start < end && tokens[start] === symbol.value) {
+        const tails = deriveRhs(rhs, symbolIndex + 1, start + 1, end);
+        for (const tail of tails) {
+          pushLimited(results, [
+            {
+              kind: 'terminal',
+              value: symbol.value,
+              tokenIndex: start,
+            },
+            ...tail,
+          ]);
+          if (results.length >= maxTrees) {
+            break;
+          }
+        }
+      }
+      derivationMemo.set(memoKey, results);
+      return results;
+    }
+
+    for (let split = start; split <= end; split += 1) {
+      const key = completedIndexKey(symbol.value, start, split);
+      const candidates = completedBySpan.get(key) ?? [];
+      for (const candidate of candidates) {
+        const childTrees = treesForCompletedState(completedStateId(candidate));
+        if (childTrees.length === 0) {
+          continue;
+        }
+        const tails = deriveRhs(rhs, symbolIndex + 1, split, end);
+        if (tails.length === 0) {
+          continue;
+        }
+        for (const tree of childTrees) {
+          for (const tail of tails) {
+            pushLimited(results, [tree, ...tail]);
+            if (results.length >= maxTrees) {
+              break;
+            }
+          }
+          if (results.length >= maxTrees) {
+            break;
+          }
+        }
+        if (results.length >= maxTrees) {
+          break;
+        }
+      }
+      if (results.length >= maxTrees) {
+        break;
+      }
+    }
+
+    derivationMemo.set(memoKey, results);
+    return results;
+  }
+
+  function treesForCompletedState(stateId: string): ParseTreeNode[] {
+    const memoized = treeMemo.get(stateId);
+    if (memoized) {
+      return memoized;
+    }
+
+    if (inProgress.has(stateId)) {
+      return [];
+    }
+
+    const state = stateById.get(stateId);
+    if (!state || !isComplete(state)) {
+      return [];
+    }
+
+    inProgress.add(stateId);
+    const derivations = deriveRhs(state.rhs, 0, state.origin, state.end);
+    const nodes: ParseTreeNode[] = [];
+
+    for (const children of derivations) {
+      pushLimited(nodes, {
+        kind: 'nonterminal',
+        value: state.lhs,
+        start: state.origin,
+        end: state.end,
+        children,
+      });
+      if (nodes.length >= maxTrees) {
+        break;
+      }
+    }
+
+    treeMemo.set(stateId, nodes);
+    inProgress.delete(stateId);
+    return nodes;
+  }
+
+  const roots: ParseTreeNode[] = [];
+  for (const startId of acceptingStartIds) {
+    const rootWrappers = treesForCompletedState(startId);
+    for (const wrapper of rootWrappers) {
+      const rootChild = wrapper.children[0];
+      if (rootChild && rootChild.kind === 'nonterminal') {
+        pushLimited(roots, rootChild);
+      }
+      if (roots.length >= maxTrees) {
+        break;
+      }
+    }
+    if (roots.length >= maxTrees) {
+      break;
+    }
+  }
+
+  return {
+    accepted,
+    trees: roots,
+    truncated,
+  };
+}
+
+export function isStringInGrammar(grammar: Grammar, tokens: string[]): boolean {
+  const chart = buildChart(grammar, tokens);
+  return isAccepted(chart, tokens.length);
 }
