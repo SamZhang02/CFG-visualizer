@@ -124,6 +124,23 @@ function buildChart(grammar: Grammar, tokens: string[]): Map<string, EarleyState
             states.push(next);
           }
         }
+
+        // If this nonterminal is already complete at the current position
+        // (for example via an epsilon production), advance immediately so
+        // completion order does not affect recognition.
+        for (const completed of chart[i].values()) {
+          if (!isComplete(completed)) {
+            continue;
+          }
+          if (completed.lhs !== expected.value || completed.origin !== i) {
+            continue;
+          }
+          const next = advance(state);
+          if (addState(chart[i], next)) {
+            states.push(next);
+          }
+          break;
+        }
       } else if (i < n && tokens[i] === expected.value) {
         addState(chart[i + 1], advance(state));
       }
