@@ -14,3 +14,6 @@ preview:
 
 typecheck:
     pnpm typecheck
+
+deploy:
+    pnpm run deploy
